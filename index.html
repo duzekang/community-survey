@@ -82,6 +82,13 @@
             border-radius: 0 8px 8px 0;
             margin: 20px 0;
             font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .info-box i {
+            margin-right: 10px;
+            color: var(--primary);
         }
         
         .card {
@@ -565,6 +572,13 @@
             
             .btn-container {
                 flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+                margin-bottom: 10px;
             }
             
             .stats-container {
@@ -590,7 +604,8 @@
         </header>
         
         <div class="info-box">
-            <p><i class="fas fa-info-circle"></i> 本问卷采用匿名方式进行，所有数据仅用于统计分析，请放心填写。</p>
+            <i class="fas fa-info-circle"></i>
+            <p>本问卷采用匿名方式进行，所有数据仅用于统计分析，请放心填写。</p>
         </div>
         
         <div class="progress-container">
@@ -1383,27 +1398,28 @@
                 
                 requiredGroups.forEach(group => {
                     const requiredInputs = group.querySelectorAll('[required]');
-                    let groupValid = true;
+                    let groupValid = false;
                     
                     requiredInputs.forEach(input => {
                         if (input.type === 'radio') {
                             const name = input.name;
                             const isChecked = document.querySelectorAll(`input[name="${name}"]:checked`).length > 0;
                             
-                            if (!isChecked && group.querySelector('.error-message')) {
-                                group.querySelector('.error-message').style.display = 'block';
-                                groupValid = false;
+                            if (isChecked) {
+                                groupValid = true;
                             }
                         } else {
-                            if (!input.value.trim() && group.querySelector('.error-message')) {
-                                group.querySelector('.error-message').style.display = 'block';
-                                groupValid = false;
+                            if (input.value.trim()) {
+                                groupValid = true;
                             }
                         }
                     });
                     
                     if (!groupValid) {
                         valid = false;
+                        if (group.querySelector('.error-message')) {
+                            group.querySelector('.error-message').style.display = 'block';
+                        }
                         // 滚动到第一个错误
                         if (valid === false) {
                             group.scrollIntoView({
@@ -1461,26 +1477,44 @@
             
             // 更新进度条
             function updateProgress() {
-                const totalFields = 50; // 总字段数估算
+                const totalFields = 17; // 总问题数
                 let completedFields = 0;
                 
-                // 检查单选按钮
-                document.querySelectorAll('input[type="radio"]').forEach(radio => {
-                    if (radio.checked) completedFields++;
+                // 检查必填单选按钮
+                document.querySelectorAll('.form-group.required input[type="radio"]').forEach(radio => {
+                    const group = radio.closest('.form-group');
+                    const name = radio.name;
+                    if (document.querySelector(`input[name="${name}"]:checked`)) {
+                        completedFields += 1;
+                    }
+                });
+                
+                // 检查非必填单选按钮
+                document.querySelectorAll('.form-group:not(.required) input[type="radio"]').forEach(radio => {
+                    const name = radio.name;
+                    if (document.querySelector(`input[name="${name}"]:checked`)) {
+                        completedFields += 0.5;
+                    }
                 });
                 
                 // 检查多选按钮
                 document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-                    if (checkbox.checked) completedFields += 0.5;
+                    if (checkbox.checked) {
+                        completedFields += 0.3;
+                    }
                 });
                 
                 // 检查文本输入
                 document.querySelectorAll('.text-input').forEach(input => {
-                    if (input.value.trim() !== '') completedFields++;
+                    if (input.value.trim() !== '') {
+                        completedFields += 0.5;
+                    }
                 });
                 
                 // 检查评分
-                if (document.getElementById('rating-value').value) completedFields++;
+                if (document.getElementById('rating-value').value) {
+                    completedFields += 1;
+                }
                 
                 // 计算完成百分比
                 let progress = Math.min(100, Math.round((completedFields / totalFields) * 100));
@@ -1522,9 +1556,9 @@
                     row.innerHTML = `
                         <td>${submission.timestamp}</td>
                         <td>${submission.age || '-'}</td>
-                        <td>${submission.occupation === '其他' ? submission.occupation_other : submission.occupation || '-'}</td>
+                        <td>${submission.occupation === '其他' ? (submission.occupation_other || '其他') : (submission.occupation || '-')}</td>
                         <td>${submission.used_platform || '-'}</td>
-                        <td>${submission.rating ? '★'.repeat(submission.rating) : '-'}</td>
+                        <td>${submission.rating ? '★'.repeat(parseInt(submission.rating)) : '-'}</td>
                         <td>${submission.governance || '-'}</td>
                     `;
                     
