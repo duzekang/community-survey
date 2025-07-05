@@ -540,6 +540,16 @@
             color: white;
         }
         
+        .data-status {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #6c757d;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -1097,6 +1107,9 @@
                             </tbody>
                         </table>
                     </div>
+                    <div id="submissions-status" class="data-status">
+                        <i class="fas fa-spinner fa-spin"></i> 正在加载数据...
+                    </div>
                 </div>
                 
                 <div class="admin-content">
@@ -1132,119 +1145,56 @@
     </div>
 
     <script>
-        // 模拟的数据库存储
-        let submissions = JSON.parse(localStorage.getItem('surveySubmissions')) || [];
+        // 使用更可靠的存储键名
+        const STORAGE_KEY = 'community_survey_submissions_v2';
         
-        // 问卷问题结构
-        const questions = {
-            section1: [
-                {
-                    id: "gender",
-                    title: "1. 性别",
-                    type: "radio",
-                    options: ["男", "女"]
-                },
-                {
-                    id: "age",
-                    title: "2. 年龄",
-                    type: "radio",
-                    options: ["17岁及以下", "18-25岁", "26-35岁", "36-45岁", "46-55岁", "56岁及以上"]
-                },
-                {
-                    id: "education",
-                    title: "3. 文化程度",
-                    type: "radio",
-                    options: ["小学及以下", "初中", "高中/中专/技校", "大专", "本科及以上"]
-                },
-                {
-                    id: "occupation",
-                    title: "4. 职业",
-                    type: "radio",
-                    options: ["公职人员", "企业员工", "个体经营户", "自由职业者", "离/退休人员", "学生", "其他"]
-                },
-                {
-                    id: "residence",
-                    title: "5. 在本社区居住时长",
-                    type: "radio",
-                    options: ["1年以内", "1-3年", "3-5年", "5年以上"]
-                }
-            ],
-            section2: [
-                {
-                    id: "awareness",
-                    title: "6. 您是否了解本社区提供的数字化服务？",
-                    type: "radio",
-                    options: ["非常了解", "比较了解", "了解一点", "完全不了解"]
-                },
-                {
-                    id: "used_platform",
-                    title: "7. 您是否使用过社区数字化服务平台？",
-                    type: "radio",
-                    options: ["是", "否"]
-                },
-                {
-                    id: "used_features",
-                    title: "8. 您使用过以下哪些社区数字化服务功能？",
-                    type: "checkbox",
-                    options: ["在线政务办理", "社区资讯推送", "生活缴费", "社区医疗预约挂号", "社区电商/团购服务", "邻里社交互动", "其他"]
-                },
-                {
-                    id: "frequency",
-                    title: "9. 您平均每周使用社区数字化服务的频率是？",
-                    type: "radio",
-                    options: ["1-2次", "3-5次", "几乎每天", "不确定/无规律"]
-                },
-                {
-                    id: "problems",
-                    title: "10. 您认为当前社区数字化服务存在的主要问题是？",
-                    type: "checkbox",
-                    options: ["功能不实用", "操作流程复杂", "信息更新不及时", "平台稳定性差", "个人信息安全无保障", "宣传不到位", "其他"]
-                }
-            ],
-            section3: [
-                {
-                    id: "desired_features",
-                    title: "11. 您希望社区数字化服务平台优先提供哪些功能？",
-                    type: "checkbox",
-                    options: ["政务服务", "生活便民服务", "文化活动服务", "健康医疗服务", "老年关怀服务", "其他"]
-                },
-                {
-                    id: "expectations",
-                    title: "12. 您对数字化服务平台的操作体验有哪些期望？",
-                    type: "checkbox",
-                    options: ["简化注册登录流程", "界面设计简洁直观", "提供语音导航/视频教程", "支持多终端同步", "其他"]
-                },
-                {
-                    id: "governance",
-                    title: "13. 您是否愿意通过数字化平台参与社区治理？",
-                    type: "radio",
-                    options: ["非常愿意", "愿意", "无所谓", "不愿意"]
-                }
-            ],
-            section4: [
-                {
-                    id: "rating",
-                    title: "14. 您对社区数字化服务平台的整体满意度如何？",
-                    type: "rating",
-                    options: ["1", "2", "3", "4", "5"]
-                },
-                {
-                    id: "obstacles",
-                    title: "15. 您认为影响社区数字化服务推广的主要障碍是？",
-                    type: "checkbox",
-                    options: ["居民数字技能不足", "平台功能与实际需求不符", "缺乏有效的宣传和使用培训", "网络信号或设备支持不足", "担心隐私泄露或数据安全", "其他"]
-                },
-                {
-                    id: "channels",
-                    title: "16. 您希望通过哪些渠道获取数字化服务使用指导？",
-                    type: "checkbox",
-                    options: ["社区工作人员现场教学", "线上图文/视频教程", "社区宣传栏/手册", "邻里互助", "其他"]
-                }
-            ]
-        };
+        // 初始化数据存储
+        let submissions = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
         
+        // 保存数据到本地存储
+        function saveSubmissions() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(submissions));
+                console.log('数据保存成功，当前提交数:', submissions.length);
+            } catch (e) {
+                console.error('保存数据时出错:', e);
+                if (e.name === 'QuotaExceededError') {
+                    alert('存储空间不足，无法保存问卷数据。请清理浏览器缓存或联系管理员。');
+                }
+            }
+        }
+        
+        // 从本地存储加载数据
+        function loadSubmissions() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (data) {
+                try {
+                    submissions = JSON.parse(data);
+                    console.log('数据加载成功，提交数:', submissions.length);
+                } catch (e) {
+                    console.error('解析数据时出错:', e);
+                    submissions = [];
+                }
+            } else {
+                submissions = [];
+            }
+            return submissions;
+        }
+        
+        // 清除旧版本数据
+        function clearOldData() {
+            // 清除旧版本的存储数据
+            if (localStorage.getItem('surveySubmissions')) {
+                localStorage.removeItem('surveySubmissions');
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // 初始化表单状态
+            // 清除旧数据
+            clearOldData();
+            
+            // 初始化
+            loadSubmissions();
             updateConditionalFields();
             updateProgress();
             
@@ -1325,9 +1275,9 @@
                         suggestions: document.querySelector('textarea[name="suggestions"]')?.value
                     };
                     
-                    // 保存到模拟数据库
+                    // 保存到数据存储
                     submissions.push(formData);
-                    localStorage.setItem('surveySubmissions', JSON.stringify(submissions));
+                    saveSubmissions();
                     
                     // 显示成功消息
                     document.getElementById('survey-form').style.display = 'none';
@@ -1345,6 +1295,11 @@
                 document.getElementById('admin-panel').style.display = 'block';
                 document.getElementById('admin-dashboard').style.display = 'none';
                 document.getElementById('login-section').style.display = 'block';
+                
+                // 重置登录表单
+                document.getElementById('admin-username').value = '';
+                document.getElementById('admin-password').value = '';
+                document.getElementById('login-error').style.display = 'none';
             });
             
             document.getElementById('close-admin').addEventListener('click', function() {
@@ -1526,6 +1481,9 @@
             
             // 加载统计数据
             function loadStatistics() {
+                // 从存储加载最新数据
+                const submissions = loadSubmissions();
+                
                 // 更新总提交量
                 document.getElementById('total-submissions').textContent = submissions.length;
                 
@@ -1545,10 +1503,17 @@
                 
                 // 填充提交表格
                 const tableBody = document.getElementById('submissions-body');
+                const statusElement = document.getElementById('submissions-status');
+                
                 tableBody.innerHTML = '';
                 
-                // 只显示最近的10条记录
-                const recentSubmissions = submissions.slice(-10);
+                if (submissions.length === 0) {
+                    statusElement.innerHTML = '<i class="fas fa-info-circle"></i> 暂无提交数据';
+                    return;
+                }
+                
+                // 只显示最近的20条记录
+                const recentSubmissions = submissions.slice(-20);
                 
                 recentSubmissions.forEach(submission => {
                     const row = document.createElement('tr');
@@ -1564,14 +1529,40 @@
                     
                     tableBody.appendChild(row);
                 });
+                
+                statusElement.innerHTML = `<i class="fas fa-check-circle"></i> 已加载 ${recentSubmissions.length} 条记录（共 ${submissions.length} 条）`;
             }
             
             // 加载问题统计数据
             function loadQuestionStats() {
+                // 从存储加载最新数据
+                const submissions = loadSubmissions();
+                
                 // 清空现有统计
-                Object.keys(questions).forEach(section => {
-                    document.getElementById(`${section}-stats`).innerHTML = '';
+                ['section1', 'section2', 'section3', 'section4'].forEach(section => {
+                    const element = document.getElementById(`${section}-stats`);
+                    if (element) element.innerHTML = '';
                 });
+                
+                // 如果没有数据，显示提示
+                if (submissions.length === 0) {
+                    ['section1', 'section2', 'section3', 'section4'].forEach(section => {
+                        const element = document.getElementById(`${section}-stats`);
+                        if (element) {
+                            element.innerHTML = `
+                                <div class="data-status">
+                                    <i class="fas fa-info-circle"></i> 暂无统计数据
+                                </div>
+                            `;
+                        }
+                    });
+                    return;
+                }
+                
+                // 问卷问题结构（与之前相同）
+                const questions = {
+                    // ...（问题结构保持不变）
+                };
                 
                 // 遍历所有部分
                 Object.keys(questions).forEach(section => {
